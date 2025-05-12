@@ -53,13 +53,13 @@ kubeadm init
 ---
 ### 🪵 Logging & Troubleshooting Summary
 
-Throughout the Kubernetes installation and game deployment process, we relied on a combination of system logs, Kubernetes diagnostics, and application-level logging to identify and resolve issues effectively.
+The Kubernetes installation and app deployment process relies on a combination of system logs, Kubernetes diagnostics, and application-level logging to identify and resolve issues effectively.
 
 ---
 
 #### 🔧 System-Level Logging
 
-- We used `journalctl` to investigate service failures:
+- Use `journalctl` to investigate service failures:
   ```bash
   journalctl -xeu containerd
   journalctl -xeu kubelet
@@ -75,7 +75,7 @@ Throughout the Kubernetes installation and game deployment process, we relied on
   - CNI plugin issues (e.g., Calico not ready)
   - TLS/certificate errors from Calico when API server trust wasn’t yet established
   - Pod status reasons (`CrashLoopBackOff`, `ImagePullBackOff`, etc.)
-- We monitored system components using:
+- Monitor system components using:
   ```bash
   kubectl get pods -n kube-system -o wide
   ```
@@ -213,7 +213,7 @@ kubectl get nodes -o wide
 
 ## 🐳 Docker & Image Building
 
-- We use Docker Compose (optional) to **prebuild images** for the app backend and frontend.
+- Use Docker Compose (optional) to **prebuild images** for the app backend and frontend.
 - Docker was **not installed on Kubernetes nodes** to avoid conflict with `containerd`.
 - Use a separate build host or CI runner for `docker-compose build`.
 
