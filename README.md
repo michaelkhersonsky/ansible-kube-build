@@ -13,6 +13,11 @@ This repository contains an automated Ansible setup to provision a near-producti
 ├── README.md           # This file
 ```
 
+### 🖼️ Infrastructure Overview
+
+![Kubernetes Cluster Infrastructure](./Infrastructure.png)
+
+
 ---
 
 ## 🚀 Features
