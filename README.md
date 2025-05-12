@@ -30,26 +30,6 @@ This repository contains an automated Ansible setup to provision a near-producti
 ## 📦 Kubernetes Installation via Ansible
 
 All provisioning logic resides in `/playbooks`.
-
-### ✅ Playbook Highlights:
-
-- Disables swap and sets sysctl parameters
-- Installs and configures `containerd` (including `SystemdCgroup = true`)
-- Adds Kubernetes official repo and installs `kubeadm`, `kubelet`, `kubectl`
-- Initializes the master node with:
-
-```
-kubeadm init --pod-network-cidr=192.168.0.0/16 
-```
-or simply
-```
-kubeadm init 
-```
-
-- Configures `kubectl` access via `/root/.kube/config`
-- Installs Calico CNI with network policies and pod IP assignment
-- Manual adding worker nodes using `kubeadm join`
-
 ---
 ### 📋 Ansible Playbook Execution Order
 
@@ -83,6 +63,19 @@ It also enables and starts the `kubelet` service. SELinux is configured to permi
 
 Runs `kubeadm init` on the master node with the defined pod CIDR (`192.168.0.0/16`), sets up the kube config for `kubectl`, and prepares the control plane for networking and worker node joining.
 
+
+### ✅This step tries to initialize the cluster - it could be fragile in Ansible.
+
+- If it fails, you can try Initializing the master node with:
+
+```
+kubeadm init --pod-network-cidr=192.168.0.0/16 
+```
+or simply
+```
+kubeadm init 
+```
+
 > ⚠️ **Important:** This playbook must complete successfully before applying any CNI plugin such as Calico.
 
 ---
@@ -100,6 +93,59 @@ If managing worker nodes with Ansible, this playbook can execute the `kubeadm jo
 ---
 
 Following this order ensures a predictable and clean Kubernetes setup. The separation of responsibilities across playbooks also makes the process modular and easier to debug or extend.
+
+---
+### 🔄 Cluster Reset Procedure
+
+To completely tear down and reset the Kubernetes cluster (e.g., for reinstallation or cleanup), use the following steps. This removes all Kubernetes configurations and reinitializes the system state.
+
+---
+
+#### 🧹 1. Reset Kubernetes components
+
+Run on **all nodes** (master and workers):
+
+```bash
+kubeadm reset -f
+```
+
+---
+
+#### 🗑️ 2. Remove residual configuration and CNI data
+
+```bash
+rm -rf /etc/cni/net.d
+rm -rf /var/lib/cni/
+rm -rf /var/lib/kubelet/*
+rm -rf /etc/kubernetes
+rm -rf ~/.kube
+```
+
+---
+
+#### 🧼 3. Restart container runtime and kubelet
+
+```bash
+systemctl restart containerd
+systemctl restart kubelet
+```
+
+---
+
+#### 🔄 4. Optional: Remove Calico and network configs
+
+```bash
+ip link delete cni0
+ip link delete flannel.1 2>/dev/null
+```
+
+Use `ip a` to inspect lingering interfaces if needed.
+
+---
+
+After resetting, the playbooks can be run again starting from `prepare-system.yaml`.
+
+> ⚠️ Always confirm that no residual configurations remain, especially in `/etc/kubernetes` and `/var/lib/kubelet`, before re-initializing with `kubeadm init`.
 
 ---
 ### 🪵 Logging & Troubleshooting Summary
