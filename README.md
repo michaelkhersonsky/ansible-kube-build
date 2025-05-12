@@ -93,7 +93,7 @@ Applies the Calico manifest using `kubectl apply`. This should only be run **aft
 
 ---
 
-#### 5. `join-workers.yaml` (optional)
+#### 5. `join-workers.yaml` (optional, not currently implemented)
 
 If managing worker nodes with Ansible, this playbook can execute the `kubeadm join` command on them. The join token and discovery hash must be retrieved from the master node (`kubeadm token create --print-join-command`) and passed to this playbook.
 
