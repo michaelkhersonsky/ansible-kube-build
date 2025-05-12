@@ -30,6 +30,20 @@ This repository contains an automated Ansible setup to provision a near-producti
 ## 📦 Kubernetes Installation via Ansible
 
 All provisioning logic resides in `/playbooks`.
+
+# 🗂️ Ansible Inventory File
+
+[master]
+master-node ansible_host=<MASTER_IP> ansible_user=rocky
+
+[worker]
+worker-node ansible_host=<WORKER_IP> ansible_user=rocky
+
+[kube_all:children]
+master
+worker
+
+Don't forget the key
 ---
 ### 📋 Ansible Playbook Execution Order
 
