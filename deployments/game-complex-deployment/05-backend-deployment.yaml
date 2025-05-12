@@ -15,9 +15,42 @@ spec:
       containers:
         - name: backend
           image: python:3.11-slim
-          command: ["python", "-m", "http.server", "5000"]
+          command: ["python3", "/backend.py"]
           ports:
             - containerPort: 5000
+          volumeMounts:
+            - name: backend-src
+              mountPath: /backend.py
+              subPath: backend.py
+      volumes:
+        - name: backend-src
+          configMap:
+            name: backend-script
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-script
+data:
+  backend.py: |
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    import urllib.parse
+    
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path.startswith("/api/score"):
+                query = urllib.parse.urlparse(self.path).query
+                params = urllib.parse.parse_qs(query)
+                score = params.get("value", ["?"])[0]
+                print(f"[SCORE] {self.client_address[0]} submitted score: {score}")
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"Score received")
+            else:
+                self.send_response(404)
+                self.end_headers()
+    
+    HTTPServer(("", 5000), Handler).serve_forever()
 ---
 apiVersion: v1
 kind: Service
@@ -29,6 +62,4 @@ spec:
   ports:
     - port: 5000
       targetPort: 5000
-      protocol: TCP
   type: ClusterIP
-
