@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game-frontend
+  template:
+    metadata:
+      labels:
+        app: game-frontend
+    spec:
+      nodeSelector:
+        game-node: "true"
+      containers:
+        - name: nginx
+          image: nginx:stable-alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: html
+          configMap:
+            name: game-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-frontend
+spec:
+  type: NodePort
+  selector:
+    app: game-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+

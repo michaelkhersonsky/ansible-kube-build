@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: game-frontend
+  template:
+    metadata:
+      labels:
+        app: game-frontend
+    spec:
+      containers:
+        - name: game
+          image: nginx:stable
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              echo '
+              from http.server import BaseHTTPRequestHandler, HTTPServer
+              class Handler(BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      print(f"GET {self.path} from {self.client_address[0]}")
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b"Backend response OK")
+              HTTPServer(("", 5000), Handler).serve_forever()
+              ' > /backend.py && \
+              nginx -c /etc/nginx/nginx.conf & \
+              python3 /backend.py
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: html
+          configMap:
+            name: game-html
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
+

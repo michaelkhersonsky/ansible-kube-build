@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-html
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head><title>Browser Game</title></head>
+    <body>
+      <h1>Simple Game</h1>
+      <script>
+        async function pingBackend() {
+          const res = await fetch("/api/");
+          const text = await res.text();
+          alert("Backend says: " + text);
+        }
+      </script>
+      <button onclick="pingBackend()">Ping Backend</button>
+    </body>
+    </html>
+

@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  frontend:
+    build: ./frontend
+    image: game-frontend:latest
+
+  backend:
+    build: ./backend
+    image: game-backend:latest
+

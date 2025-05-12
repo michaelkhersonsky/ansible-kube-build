@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    events {}
+
+    http {
+        log_format game_log '$remote_addr - $host [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent"';
+        access_log /var/log/nginx/access.log game_log;
+
+        server {
+            listen 80;
+
+            location /game/ {
+                root /usr/share/nginx/html;
+                index index.html;
+            }
+
+            location /api/ {
+                proxy_pass http://localhost:5000/;
+            }
+
+            location /metrics {
+                stub_status;
+                access_log off;
+            }
+        }
+    }
+
