@@ -51,10 +51,71 @@ kubeadm init
 - Manual adding worker nodes using `kubeadm join`
 
 ---
+### 🪵 Logging & Troubleshooting Summary
+
+Throughout the Kubernetes installation and game deployment process, we relied on a combination of system logs, Kubernetes diagnostics, and application-level logging to identify and resolve issues effectively.
+
+---
+
+#### 🔧 System-Level Logging
+
+- We used `journalctl` to investigate service failures:
+  ```bash
+  journalctl -xeu containerd
+  journalctl -xeu kubelet
+  ```
+- `systemctl status` provided insights into why `kubeadm init` or containerd restarts were failing.
+- Log errors helped us detect issues like missing `SystemdCgroup = true` in `containerd` configuration.
+
+---
+
+#### 🔍 Kubernetes Diagnostics
+
+- `kubectl describe node` and `kubectl describe pod <pod> -n kube-system` were essential for identifying:
+  - CNI plugin issues (e.g., Calico not ready)
+  - TLS/certificate errors from Calico when API server trust wasn’t yet established
+  - Pod status reasons (`CrashLoopBackOff`, `ImagePullBackOff`, etc.)
+- We monitored system components using:
+  ```bash
+  kubectl get pods -n kube-system -o wide
+  ```
+
+- `kubectl logs <pod>` was used to stream and inspect logs for the game backend and for Calico troubleshooting.
+
+---
+
+#### 📜 Application-Level Logging
+
+- The **Python backend** printed incoming requests:
+  ```python
+  print(f"GET {self.path} from {self.client_address[0]}")
+  ```
+
+- **Nginx** was configured with a custom access log format via ConfigMap:
+  ```nginx
+  log_format game_log '$remote_addr - $host [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent"';
+  access_log /var/log/nginx/access.log game_log;
+  ```
+
+- Requests to `/game`, `/api`, and `/metrics` were visible in the logs for both Nginx and the backend.
+
+---
+
+#### 🧠 Key Fixes Traced via Logging
+
+- `kubeadm init` failure due to CRI socket errors led us to reconfigure and regenerate the containerd config.
+- Calico startup failures were traced to premature application before kubeconfig setup; resolved by reapplying Calico with `--validate=false`.
+- Node readiness and backend connectivity issues were caught via detailed inspection of `describe` and logs.
+
+---
+
+Together, these logging and troubleshooting practices enabled smooth debugging and helped build a robust, observable cluster environment.
+
+---
 
 ## ⚠️ Common Errors and Solutions
 
-### ❌ kubeadm init fails with CRI runtime error
+### ❌ kubeadm init fails with CRI runtime error 
 
 ```
 rpc error: code = Unimplemented desc = unknown service runtime.v1.RuntimeService
