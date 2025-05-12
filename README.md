@@ -9,7 +9,7 @@ This repository contains an automated Ansible setup to provision a near-producti
 ```
 .
 ├── playbooks/          # Ansible playbooks for system prep and Kubernetes provisioning
-├── deployment/         # Kubernetes YAML files for app deployment
+├── deployments/         # Kubernetes YAML files for app deployment
 ├── README.md           # This file
 ```
 
