@@ -19,7 +19,7 @@ data:
             }
 
             location /api/ {
-                proxy_pass http://localhost:5000/;
+                proxy_pass http://game-backend:5000/;
             }
 
             location /metrics {
@@ -28,4 +28,3 @@ data:
             }
         }
     }
-

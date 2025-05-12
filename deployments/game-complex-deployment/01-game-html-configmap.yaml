@@ -19,4 +19,3 @@ data:
       <button onclick="pingBackend()">Ping Backend</button>
     </body>
     </html>
-
