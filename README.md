@@ -17,6 +17,7 @@ This repository contains an automated Ansible setup to provision a near-producti
 
 ## 🚀 Features
 
+- 2 independent VM's would be required for this infrastructure. They should be setup in one private network, with no firewall between them.
 - Full Kubernetes 1.33 installation on Rocky Linux nodes via Ansible
 - Secure container runtime setup with `containerd`
 - Calico as the CNI provider
@@ -33,10 +34,10 @@ All provisioning logic resides in `/playbooks`.
 
 # 🗂️ Ansible Inventory File
 
-[master]
+[kube_master]
 master-node ansible_host=<MASTER_IP> ansible_user=rocky
 
-[worker]
+[kube_worker]
 worker-node ansible_host=<WORKER_IP> ansible_user=rocky
 
 [kube_all:children]
