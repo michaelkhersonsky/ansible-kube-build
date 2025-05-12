@@ -41,10 +41,10 @@ master-node ansible_host=<MASTER_IP> ansible_user=rocky
 worker-node ansible_host=<WORKER_IP> ansible_user=rocky
 
 [kube_all:children]
-master
-worker
+kube_master
+kube_worker
 
-Don't forget the key
+Don't forget the key.
 ---
 ### 📋 Ansible Playbook Execution Order
 
