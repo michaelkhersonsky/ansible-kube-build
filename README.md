@@ -51,6 +51,57 @@ kubeadm init
 - Manual adding worker nodes using `kubeadm join`
 
 ---
+### 📋 Ansible Playbook Execution Order
+
+The Kubernetes cluster is provisioned and configured using a series of Ansible playbooks located in the `/playbooks` directory. These playbooks must be executed in the following order to ensure a stable and functional setup.
+
+---
+
+#### 1. `prepare-system.yaml`
+
+Prepares the Rocky Linux nodes for Kubernetes installation by:
+- Disabling swap
+- Loading required kernel modules
+- Applying sysctl network parameters
+- Installing dependencies such as `yum-utils` and `lvm2`
+- Installing and configuring `containerd` as the container runtime (including generating `config.toml` with `SystemdCgroup = true`)
+
+---
+
+#### 2. `install-k8s.yaml`
+
+Adds the official Kubernetes 1.33 repository and installs:
+- `kubeadm`
+- `kubelet`
+- `kubectl`
+
+It also enables and starts the `kubelet` service. SELinux is configured to permissive mode for compatibility.
+
+---
+
+#### 3. `initialize-master.yaml`
+
+Runs `kubeadm init` on the master node with the defined pod CIDR (`192.168.0.0/16`), sets up the kube config for `kubectl`, and prepares the control plane for networking and worker node joining.
+
+> ⚠️ **Important:** This playbook must complete successfully before applying any CNI plugin such as Calico.
+
+---
+
+#### 4. `install-calico.yaml`
+
+Applies the Calico manifest using `kubectl apply`. This should only be run **after** the master node has been initialized and `kubectl get nodes` shows the master in a `Ready` or `NotReady` state. Running Calico too early may result in certificate errors or CRI-related issues.
+
+---
+
+#### 5. `join-workers.yaml` (optional)
+
+If managing worker nodes with Ansible, this playbook can execute the `kubeadm join` command on them. The join token and discovery hash must be retrieved from the master node (`kubeadm token create --print-join-command`) and passed to this playbook.
+
+---
+
+Following this order ensures a predictable and clean Kubernetes setup. The separation of responsibilities across playbooks also makes the process modular and easier to debug or extend.
+
+---
 ### 🪵 Logging & Troubleshooting Summary
 
 The Kubernetes installation and app deployment process relies on a combination of system logs, Kubernetes diagnostics, and application-level logging to identify and resolve issues effectively.
