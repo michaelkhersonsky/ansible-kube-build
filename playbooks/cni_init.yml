@@ -1,0 +1,10 @@
+- name: Install Calico CNI
+  hosts: kube_master
+  become: true
+  tasks:
+    - name: Download and apply Calico manifest
+      ansible.builtin.command: >
+        kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/calico.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+

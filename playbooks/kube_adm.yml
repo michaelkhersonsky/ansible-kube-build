@@ -1,0 +1,42 @@
+- name: Install Kubernetes 1.33 admin tools
+  hosts: kube_all
+  become: true
+  tasks:
+
+    - name: Set SELinux to permissive (runtime)
+      ansible.builtin.command: setenforce 0
+      when: ansible_selinux.status == "enabled"
+
+    - name: Set SELinux to permissive (persistent)
+      ansible.builtin.replace:
+        path: /etc/selinux/config
+        regexp: '^SELINUX=enforcing'
+        replace: 'SELINUX=permissive'
+
+    - name: Add Kubernetes 1.33 repo
+      ansible.builtin.copy:
+        dest: /etc/yum.repos.d/kubernetes.repo
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://pkgs.k8s.io/core:/stable:/v1.33/rpm/
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://pkgs.k8s.io/core:/stable:/v1.33/rpm/repodata/repomd.xml.key
+          exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+
+    - name: Install kubelet, kubeadm, kubectl (v1.33)
+      ansible.builtin.dnf:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+        disable_excludes: kubernetes
+
+    - name: Enable and start kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        enabled: true
+        state: started
+

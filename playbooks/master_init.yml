@@ -1,0 +1,33 @@
+- name: Initialize Kubernetes master
+  hosts: kube_master
+  become: true
+  tasks:
+    - name: Initialize cluster
+      ansible.builtin.command: kubeadm init
+      args:
+        creates: /etc/kubernetes/admin.conf
+
+    - name: Set up kube config for root
+      ansible.builtin.shell: |
+        mkdir -p /root/.kube
+        cp -i /etc/kubernetes/admin.conf /root/.kube/config
+        chown root:root /root/.kube/config
+
+    - name: Set up kubectl config for root
+      ansible.builtin.file:
+        path: /root/.kube
+        state: directory
+        mode: '0700'
+        owner: root
+        group: root
+
+    - name: Copy admin.conf to .kube/config
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0600'
+
+
