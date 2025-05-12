@@ -48,7 +48,7 @@ kubeadm init
 
 - Configures `kubectl` access via `/root/.kube/config`
 - Installs Calico CNI with network policies and pod IP assignment
-- Supports adding worker nodes using `kubeadm join`
+- Manual adding worker nodes using `kubeadm join`
 
 ---
 
