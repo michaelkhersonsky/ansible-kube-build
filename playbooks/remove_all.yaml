@@ -1,0 +1,64 @@
+---
+- name: Reset and remove Kubernetes components
+  hosts: kube_all
+  become: true
+  tasks:
+
+    - name: Reset the cluster (kubeadm reset)
+      ansible.builtin.shell: kubeadm reset -f
+      ignore_errors: true
+
+    - name: Remove Kubernetes packages
+      ansible.builtin.package:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+          - kubernetes-cni
+          - cri-tools
+        state: absent
+
+    - name: Stop and disable kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        enabled: false
+        state: stopped
+      ignore_errors: true
+
+    - name: Remove Kubernetes config directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/kubernetes
+        - /var/lib/etcd
+        - /var/lib/kubelet
+        - /root/.kube
+        - /etc/cni
+        - /opt/cni
+        - /run/flannel
+        - /etc/systemd/system/kubelet.service.d
+
+    - name: Remove containerd and CNI plugins if needed
+      ansible.builtin.package:
+        name: containerd.io
+        state: absent
+
+    - name: Remove containerd config and data
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/containerd
+        - /var/lib/containerd
+        - /run/containerd
+
+    - name: Stop and disable containerd
+      ansible.builtin.systemd:
+        name: containerd
+        enabled: false
+        state: stopped
+      ignore_errors: true
+
+    - name: Reload systemd daemon
+      ansible.builtin.command: systemctl daemon-reexec
