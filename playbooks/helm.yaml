@@ -1,0 +1,97 @@
+---
+- name: Install Helm, Helm Dashboard, and NGINX Proxy with Auth
+  hosts: kube_master
+  become: true
+
+  vars:
+    helm_version: "v3.14.4"
+    helm_bin_path: "/usr/local/bin/helm"
+    helm_user: "user"
+    helm_password: "twr383KJhe-wksu32"
+
+  tasks:
+    - name: Install required packages
+      dnf:
+        name: [curl, tar, git, firewalld, nginx, httpd-tools]
+        state: present
+
+    - name: Enable and start firewalld
+      systemd:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Download Helm archive
+      get_url:
+        url: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
+        dest: /tmp/helm.tar.gz
+
+    - name: Extract Helm binary
+      unarchive:
+        src: /tmp/helm.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Move Helm binary to /usr/local/bin
+      command: mv /tmp/linux-amd64/helm {{ helm_bin_path }}
+
+    - name: Make Helm binary executable
+      file:
+        path: "{{ helm_bin_path }}"
+        mode: '0755'
+        state: file
+
+    - name: Install Helm dashboard plugin (ignore if already exists)
+      shell: "{{ helm_bin_path }} plugin install https://github.com/komodorio/helm-dashboard.git"
+      register: helm_plugin_result
+      failed_when: "'plugin already exists' not in helm_plugin_result.stderr and helm_plugin_result.rc != 0"
+
+    - name: Start Helm Dashboard as background service
+      shell: >
+        nohup {{ helm_bin_path }} dashboard --bind 0.0.0.0 --port 8080 --no-browser > /var/log/helm-dashboard.log 2>&1 &
+      args:
+        executable: /bin/bash
+
+    - name: Create NGINX basic auth file
+      shell: "htpasswd -b -c /etc/nginx/.htpasswd {{ helm_user }} {{ helm_password }}"
+      args:
+        creates: /etc/nginx/.htpasswd
+
+    - name: Create NGINX config for Helm Dashboard
+      copy:
+        dest: /etc/nginx/conf.d/helm-dashboard.conf
+        content: |
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+
+                  auth_basic           "Restricted";
+                  auth_basic_user_file /etc/nginx/.htpasswd;
+              }
+          }
+
+    - name: Enable and start NGINX
+      systemd:
+        name: nginx
+        enabled: true
+        state: restarted
+
+    - name: Open port 8080 in firewalld
+      firewalld:
+        port: 8080/tcp
+        permanent: true
+        state: enabled
+        immediate: true
+
+    - name: Open port 80 in firewalld
+      firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+

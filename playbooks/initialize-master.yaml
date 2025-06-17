@@ -13,13 +13,13 @@
         cp -i /etc/kubernetes/admin.conf /root/.kube/config
         chown root:root /root/.kube/config
 
-    - name: Set up kubectl config for root
-      ansible.builtin.file:
-        path: /root/.kube
-        state: directory
-        mode: '0700'
-        owner: root
-        group: root
+    #- name: Set up kubectl config for root
+    #  ansible.builtin.file:
+    #    path: /root/.kube
+    #    state: directory
+    #    mode: '0700'
+    #    owner: root
+    #    group: root
 
     - name: Copy admin.conf to .kube/config
       ansible.builtin.copy:

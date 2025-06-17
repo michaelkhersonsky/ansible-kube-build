@@ -1,0 +1,73 @@
+- name: Reset Kubernetes and remove components
+  hosts: kube_all
+  become: true
+  tasks:
+
+    - name: Reset kubeadm state
+      ansible.builtin.command: kubeadm reset -f
+      ignore_errors: true
+
+    - name: Remove Kubernetes packages
+      ansible.builtin.package:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: absent
+
+    - name: Disable and stop kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Remove Kubernetes config and state directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/kubernetes
+        - /var/lib/etcd
+        - /var/lib/kubelet
+        - /var/lib/cni
+        - /etc/cni
+        - /opt/cni
+        - ~/.kube
+
+    - name: Remove containerd and Docker (if installed)
+      ansible.builtin.package:
+        name:
+          - containerd
+          - containerd.io
+          - docker
+          - docker-ce
+          - docker-ce-cli
+        state: absent
+
+    - name: Disable and stop containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Remove containerd data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/containerd
+        - /var/lib/containerd
+        - /run/containerd
+
+    - name: Clean up iptables and network interfaces
+      ansible.builtin.shell: |
+        ip link delete cni0 2>/dev/null || true
+        ip link delete flannel.1 2>/dev/null || true
+        ip link delete vxlan.calico 2>/dev/null || true
+        iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+      args:
+        executable: /bin/bash
+      ignore_errors: true
+
